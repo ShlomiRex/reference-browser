@@ -5,6 +5,7 @@ def log(message) {
 }
 
 def runCmd(cmd, workingDir, successMessage, captureStdout=true) {
+    log("Running command: ${cmd} in ${workingDir}")
     def proc = cmd.execute(null, new File(workingDir))
     def standardOutput = captureStdout ? new ByteArrayOutputStream() : System.out
     proc.consumeProcessOutput(standardOutput, System.err)
@@ -53,8 +54,8 @@ if (localProperties != null) {
 
     if (androidComponentsLocalPath != null) {
         log("Enabling automatic publication of android-components from: $androidComponentsLocalPath")
-        def publishAcCmd = ["./automation/publish_to_maven_local_if_modified.py"]
-        runCmd(publishAcCmd, androidComponentsLocalPath, "Published android-components for local development.", false)
+        def publishAcCmd = ["C:\\Users\\Shlomi\\Desktop\\Projects\\android-components\\automation\\publish_to_maven_local_if_modified.py"]
+        //runCmd(publishAcCmd, androidComponentsLocalPath, "Published android-components for local development.", false)
     } else {
         log("Disabled auto-publication of android-components. Enable it by settings '$settingAndroidComponentsPath' in local.properties")
     }

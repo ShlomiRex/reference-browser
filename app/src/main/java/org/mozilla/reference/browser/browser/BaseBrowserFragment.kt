@@ -47,7 +47,6 @@ import org.mozilla.reference.browser.AppPermissionCodes.REQUEST_CODE_DOWNLOAD_PE
 import org.mozilla.reference.browser.AppPermissionCodes.REQUEST_CODE_PROMPT_PERMISSIONS
 import org.mozilla.reference.browser.BuildConfig
 import org.mozilla.reference.browser.R
-import org.mozilla.reference.browser.addons.WebExtensionPromptFeature
 import org.mozilla.reference.browser.downloads.DownloadService
 import org.mozilla.reference.browser.ext.getPreferenceKey
 import org.mozilla.reference.browser.ext.requireComponents
@@ -69,7 +68,6 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
     private val shareDownloadsFeature = ViewBoundFeatureWrapper<ShareDownloadFeature>()
     private val appLinksFeature = ViewBoundFeatureWrapper<AppLinksFeature>()
     private val promptsFeature = ViewBoundFeatureWrapper<PromptFeature>()
-    private val webExtensionPromptFeature = ViewBoundFeatureWrapper<WebExtensionPromptFeature>()
     private val fullScreenFeature = ViewBoundFeatureWrapper<FullScreenFeature>()
     private val findInPageIntegration = ViewBoundFeatureWrapper<FindInPageIntegration>()
     private val sitePermissionFeature = ViewBoundFeatureWrapper<SitePermissionsFeature>()
@@ -225,16 +223,6 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
                     @Suppress("DEPRECATION")
                     requestPermissions(permissions, REQUEST_CODE_PROMPT_PERMISSIONS)
                 },
-            ),
-            owner = this,
-            view = view,
-        )
-
-        webExtensionPromptFeature.set(
-            feature = WebExtensionPromptFeature(
-                store = requireComponents.core.store,
-                context = requireContext(),
-                fragmentManager = parentFragmentManager,
             ),
             owner = this,
             view = view,

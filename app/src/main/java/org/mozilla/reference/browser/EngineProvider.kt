@@ -6,6 +6,7 @@ package org.mozilla.reference.browser
 
 import android.content.Context
 import mozilla.components.browser.engine.gecko.GeckoEngine
+import mozilla.components.browser.engine.gecko.GeckoEngineSession
 import mozilla.components.browser.engine.gecko.fetch.GeckoViewFetchClient
 import mozilla.components.browser.engine.gecko.glean.GeckoAdapter
 import mozilla.components.concept.engine.DefaultSettings
@@ -45,9 +46,13 @@ object EngineProvider {
     fun createEngine(context: Context, defaultSettings: DefaultSettings): Engine {
         val runtime = getOrCreateRuntime(context)
 
-        return GeckoEngine(context, defaultSettings, runtime).also {
+        runtime.delegate
+
+        var engine = GeckoEngine(context, defaultSettings, runtime).also {
             WebCompatFeature.install(it)
         }
+
+        return engine
     }
 
     fun createClient(context: Context): Client {

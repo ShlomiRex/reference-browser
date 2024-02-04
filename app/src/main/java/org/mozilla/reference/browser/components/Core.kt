@@ -71,16 +71,17 @@ class Core(private val context: Context) {
 
         val defaultSettings = DefaultSettings(
             requestInterceptor = AppRequestInterceptor(context),
-            remoteDebuggingEnabled = prefs.getBoolean(context.getPreferenceKey(pref_key_remote_debugging), false),
-            testingModeEnabled = prefs.getBoolean(context.getPreferenceKey(R.string.pref_key_testing_mode), false),
-            trackingProtectionPolicy = createTrackingProtectionPolicy(prefs),
+            remoteDebuggingEnabled = false,
+            testingModeEnabled = false,
+            trackingProtectionPolicy = TrackingProtectionPolicy.recommended(),
             historyTrackingDelegate = HistoryDelegate(lazyHistoryStorage),
             globalPrivacyControlEnabled = prefs.getBoolean(
                 context.getPreferenceKey(R.string.pref_key_global_privacy_control),
                 false,
             ),
         )
-        EngineProvider.createEngine(context, defaultSettings)
+        var engine = EngineProvider.createEngine(context, defaultSettings)
+        engine
     }
 
     /**
@@ -152,11 +153,6 @@ class Core(private val context: Context) {
     val lazyLoginsStorage = lazy { SyncableLoginsStorage(context, lazySecurePrefs) }
 
     /**
-     * A convenience accessor to the [SyncableLoginsStorage].
-     */
-    val loginsStorage by lazy { lazyLoginsStorage.value }
-
-    /**
      * The storage component to sync and persist tabs in a Firefox Sync account.
      */
     val lazyRemoteTabsStorage = lazy { RemoteTabsStorage(context) }
@@ -184,80 +180,8 @@ class Core(private val context: Context) {
      */
     val icons by lazy { BrowserIcons(context, client) }
 
-    // Addons
-    val addonManager by lazy {
-        AddonManager(store, engine, addonProvider, addonUpdater)
-    }
-
-    val addonUpdater by lazy {
-        DefaultAddonUpdater(
-            context,
-            Frequency(1, TimeUnit.DAYS),
-            notificationsDelegate = context.components.notificationsDelegate,
-        )
-    }
-
-    val addonProvider by lazy {
-        if (Settings.isAmoCollectionOverrideConfigured(context)) {
-            provideCustomAddonProvider()
-        } else {
-            provideDefaultAddonProvider()
-        }
-    }
-
-    @Suppress("MagicNumber")
-    val supportedAddonsChecker by lazy {
-        DefaultSupportedAddonsChecker(
-            context,
-            Frequency(12, TimeUnit.HOURS),
-        )
-    }
-
     val fileUploadsDirCleaner: FileUploadsDirCleaner by lazy {
         FileUploadsDirCleaner { context.cacheDir }
-    }
-
-    private fun provideDefaultAddonProvider(): AMOAddonsProvider {
-        return AMOAddonsProvider(
-            context = context,
-            client = client,
-            collectionName = "7dfae8669acc4312a65e8ba5553036",
-            maxCacheAgeInMinutes = DAY_IN_MINUTES,
-        )
-    }
-
-    private fun provideCustomAddonProvider(): AMOAddonsProvider {
-        return AMOAddonsProvider(
-            context,
-            client,
-            collectionUser = Settings.getOverrideAmoUser(context),
-            collectionName = Settings.getOverrideAmoCollection(context),
-        )
-    }
-
-    /**
-     * Constructs a [TrackingProtectionPolicy] based on current preferences.
-     *
-     * @param prefs the shared preferences to use when reading tracking
-     * protection settings.
-     * @param normalMode whether or not tracking protection should be enabled
-     * in normal browsing mode, defaults to the current preference value.
-     * @param privateMode whether or not tracking protection should be enabled
-     * in private browsing mode, default to the current preference value.
-     * @return the constructed tracking protection policy based on preferences.
-     */
-    fun createTrackingProtectionPolicy(
-        prefs: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context),
-        normalMode: Boolean = prefs.getBoolean(context.getPreferenceKey(pref_key_tracking_protection_normal), true),
-        privateMode: Boolean = prefs.getBoolean(context.getPreferenceKey(pref_key_tracking_protection_private), true),
-    ): TrackingProtectionPolicy {
-        val trackingPolicy = TrackingProtectionPolicy.recommended()
-        return when {
-            normalMode && privateMode -> trackingPolicy
-            normalMode && !privateMode -> trackingPolicy.forRegularSessionsOnly()
-            !normalMode && privateMode -> trackingPolicy.forPrivateSessionsOnly()
-            else -> TrackingProtectionPolicy.none()
-        }
     }
 
     private val lazySecurePrefs = lazy { SecureAbove22Preferences(context, KEY_STORAGE_NAME) }

@@ -13,6 +13,7 @@ import mozilla.components.browser.state.action.SystemAction
 import mozilla.components.concept.engine.webextension.isUnsupported
 import mozilla.components.concept.push.PushProcessor
 import mozilla.components.feature.addons.update.GlobalAddonDependencyProvider
+import mozilla.components.feature.push.AutoPushFeature
 import mozilla.components.support.base.log.Log
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.log.sink.AndroidLogSink
@@ -32,11 +33,6 @@ open class BrowserApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        setupCrashReporting(this)
-
-        RustHttpConfig.setClient(lazy { components.core.client })
-        setupLogging()
-
         if (!isMainProcess()) {
             // If this is not the main process then do not continue with the initialization here. Everything that
             // follows only needs to be done in our app's main process and should not be done in other processes like
@@ -45,48 +41,17 @@ open class BrowserApplication : Application() {
             return
         }
 
+        setupCrashReporting(this)
+
+        RustHttpConfig.setClient(lazy { components.core.client })
+        setupLogging()
+
         components.core.engine.warmUp()
 
         restoreBrowserState()
 
-        GlobalAddonDependencyProvider.initialize(
-            components.core.addonManager,
-            components.core.addonUpdater,
-        )
-        WebExtensionSupport.initialize(
-            runtime = components.core.engine,
-            store = components.core.store,
-            onNewTabOverride = { _, engineSession, url ->
-                val tabId = components.useCases.tabsUseCases.addTab(
-                    url = url,
-                    selectTab = true,
-                    engineSession = engineSession,
-                )
-                tabId
-            },
-            onCloseTabOverride = { _, sessionId ->
-                components.useCases.tabsUseCases.removeTab(sessionId)
-            },
-            onSelectTabOverride = { _, sessionId ->
-                components.useCases.tabsUseCases.selectTab(sessionId)
-            },
-            onExtensionsLoaded = { extensions ->
-                components.core.addonUpdater.registerForFutureUpdates(extensions)
-
-                val checker = components.core.supportedAddonsChecker
-                val hasUnsupportedAddons = extensions.any { it.isUnsupported() }
-                if (hasUnsupportedAddons) {
-                    checker.registerForChecks()
-                } else {
-                    // As checks are a persistent subscriptions, we have to make sure
-                    // we remove any previous subscriptions.
-                    checker.unregisterForChecks()
-                }
-            },
-            onUpdatePermissionRequest = components.core.addonUpdater::onUpdatePermissionRequest,
-        )
-
         components.push.feature?.let {
+            AutoPushFeature
             Logger.info("AutoPushFeature is configured, initializing it...")
 
             PushProcessor.install(it)

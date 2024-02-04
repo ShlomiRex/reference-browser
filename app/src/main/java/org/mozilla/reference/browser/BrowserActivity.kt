@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.AttributeSet
+import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
@@ -25,7 +26,6 @@ import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.SafeIntent
 import mozilla.components.support.webextensions.WebExtensionPopupObserver
-import org.mozilla.reference.browser.addons.WebExtensionActionPopupActivity
 import org.mozilla.reference.browser.browser.BrowserFragment
 import org.mozilla.reference.browser.browser.CrashIntegration
 import org.mozilla.reference.browser.ext.components
@@ -44,9 +44,7 @@ open class BrowserActivity : AppCompatActivity() {
     private val tab: SessionState?
         get() = components.core.store.state.findCustomTabOrSelectedTab(sessionId)
 
-    private val webExtensionPopupObserver by lazy {
-        WebExtensionPopupObserver(components.core.store, ::openPopup)
-    }
+    private var TAG = "BrowserActivity";
 
     /**
      * Returns a new instance of [BrowserFragment] to display.
@@ -57,6 +55,9 @@ open class BrowserActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        var startTime = System.currentTimeMillis();
+        Log.i(TAG, "Start: " + startTime);
 
         components.notificationsDelegate.bindToActivity(this)
 
@@ -75,7 +76,6 @@ open class BrowserActivity : AppCompatActivity() {
         }
 
         NotificationManager.checkAndNotifyPolicy(this)
-        lifecycle.addObserver(webExtensionPopupObserver)
     }
 
     override fun onBackPressed() {
@@ -158,13 +158,5 @@ open class BrowserActivity : AppCompatActivity() {
             .setAction(R.string.crash_report_non_fatal_action) {
                 crashIntegration.sendCrashReport(crash)
             }.show()
-    }
-
-    private fun openPopup(webExtensionState: WebExtensionState) {
-        val intent = Intent(this, WebExtensionActionPopupActivity::class.java)
-        intent.putExtra("web_extension_id", webExtensionState.id)
-        intent.putExtra("web_extension_name", webExtensionState.name)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        startActivity(intent)
     }
 }

@@ -185,7 +185,6 @@ private fun findInPageButton() = onView(ViewMatchers.withText("Find in Page"))
 private fun reportIssueButton() = onView(ViewMatchers.withText("Report issue"))
 private fun settingsButton() = onView(ViewMatchers.withText("Settings"))
 private fun addToHomescreenButton() = onView(ViewMatchers.withText("Add to homescreen"))
-private fun addOnsButton() = onView(ViewMatchers.withText("Add-ons"))
 private fun syncedTabsButton() = onView(ViewMatchers.withText("Synced Tabs"))
 
 private fun assertShareButtonDoesntExist() = shareButton().check(ViewAssertions.doesNotExist())
